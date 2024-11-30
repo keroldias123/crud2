@@ -1,0 +1,179 @@
+﻿@page
+@using crud2.Data
+@using crud2.Views.Pessoa
+@inject Contexto _context
+@model IndexModel
+
+<style>
+    /* Estilo para a linha selecionada */
+    .table-active {
+        background-color: #ffeb99 !important; /* Cor de fundo personalizada */
+        color: #333 !important; /* Cor do texto para contraste */
+    }
+
+</style>
+
+<h1>Pessoas</h1>
+
+
+<div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+<div class="container mt-4">
+    <div class="mb-3">
+        <button id="btnNovo" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNovo">Cadastrar</button>
+        <button id="btnEditar" class="btn btn-primary" disabled onclick="abrirModalEditar()">Editar</button>
+        <button id="btnExcluir" class="btn btn-danger" disabled onclick="abrirModalExcluir()">Excluir</button>
+    </div>
+
+    <table id="tabelaPessoas" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Idade</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var pessoa in _context.GetAllPessoasAsync().Result)
+            {
+                <tr onclick="selecionarPessoa(this)" class="linha-clicavel" data-id="@pessoa.Id" data-nome="@pessoa.Nome" data-idade="@pessoa.Idade">
+                    <td>@pessoa.Nome</td>
+                    <td>@pessoa.Idade</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="modalNovo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="formNovo" method="post" action="@Url.Action("CreatePessoa", "PessoaApiHelper")">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cadastrar Nova Pessoa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="novoNome" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="novoNome" name="Nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="novoIdade" class="form-label">Idade</label>
+                        <input type="number" class="form-control" id="novoIdade" name="Idade" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="formEditar" method="post" action="@Url.Action("EditPessoa", "PessoaApiHelper")">
+            <input type="hidden" id="editarId" name="Id">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Pessoa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editarNome" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="editarNome" name="Nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editarIdade" class="form-label">Idade</label>
+                        <input type="number" class="form-control" id="editarIdade" name="Idade" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalExcluir" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="formExcluir" method="post" action="@Url.Action("DeletePessoa", "PessoaApiHelper")">
+            <input type="hidden" id="excluirId" name="id">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Excluir Pessoa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Tem certeza que deseja excluir <strong id="nomeExcluir"></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-danger">Excluir</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const tabela = document.getElementById("tabelaPessoas");
+        const btnEditar = document.getElementById("btnEditar");
+        const btnExcluir = document.getElementById("btnExcluir");
+        let pessoaSelecionada = null;
+
+        tabela.addEventListener("click", function (event) {
+            const linha = event.target.closest("tr"); // Identifica a linha clicada
+            if (!linha) return;
+
+            // Remove seleção anterior
+            if (pessoaSelecionada) {
+                pessoaSelecionada.classList.remove("table-active");
+            }
+
+            // Marca a linha atual como selecionada
+            pessoaSelecionada = linha;
+            linha.classList.add("table-active");
+
+            // Habilita os botões e preenche os dados para edição/exclusão
+            btnEditar.disabled = false;
+            btnExcluir.disabled = false;
+            btnEditar.setAttribute("data-id", linha.getAttribute("data-id"));
+            btnEditar.setAttribute("data-nome", linha.getAttribute("data-nome"));
+            btnEditar.setAttribute("data-idade", linha.getAttribute("data-idade"));
+
+            btnExcluir.setAttribute("data-id", linha.getAttribute("data-id"));
+            btnExcluir.setAttribute("data-nome", linha.getAttribute("data-nome"));
+        });
+
+        // Funções para abrir modais de editar e excluir
+        btnEditar.addEventListener("click", function () {
+            const id = btnEditar.getAttribute("data-id");
+            const nome = btnEditar.getAttribute("data-nome");
+            const idade = btnEditar.getAttribute("data-idade");
+
+            document.getElementById("editarId").value = id;
+            document.getElementById("editarNome").value = nome;
+            document.getElementById("editarIdade").value = idade;
+
+            const modalEditar = new bootstrap.Modal(document.getElementById("modalEditar"));
+            modalEditar.show();
+        });
+
+        btnExcluir.addEventListener("click", function () {
+            const id = btnExcluir.getAttribute("data-id");
+            const nome = btnExcluir.getAttribute("data-nome");
+
+            document.getElementById("excluirId").value = id;
+            document.getElementById("nomeExcluir").textContent = nome;
+
+            const modalExcluir = new bootstrap.Modal(document.getElementById("modalExcluir"));
+            modalExcluir.show();
+        });
+    });
+
+</script>
