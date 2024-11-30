@@ -44,5 +44,5 @@ O projeto é dividido da seguinte forma:
 Primeiro, clone este repositório para o seu ambiente local:
 
 ```bash
-git clone https://github.com/usuario/nome-do-repositorio.git
-cd nome-do-repositorio
+git clone https://github.com/keroldias123/crud2.git
+cd crud2
